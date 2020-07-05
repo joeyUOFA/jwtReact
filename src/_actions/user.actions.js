@@ -1,53 +1,37 @@
 import { userConstants } from '../_constants';
-import { userService } from '../_services';
-import { alertActions } from './';
 import { history } from '../_helpers';
+import axios from "axios";
+import config from 'config';
 
-export const userActions = {
-    login,
-    logout,
-    getAll
+export const login = (username, password) => async dispatch => {
+    dispatch(request({ username }));
+    try {
+        const user = await axios.post(`${config.apiUrl}/api/authenticate`, JSON.stringify({ username, password }));
+        localStorage.setItem('user', JSON.stringify(user.data));
+        const userDetail = await axios.get(`${config.apiUrl}/api/user`);
+        dispatch(success(userDetail.data));
+        history.push('/');
+    }catch(error) {
+        console.log(error);
+        dispatch(failure(error));
+    }
 };
 
-function login(username, password) {
-    return dispatch => {
-        dispatch(request({ username }));
+export const request = (user) => ({
+    type: userConstants.LOGIN_REQUEST, user
+});
 
-        userService.login(username, password)
-            .then(
-                user => { 
-                    dispatch(success(user));
-                    history.push('/');
-                },
-                error => {
-                    dispatch(failure(error));
-                    dispatch(alertActions.error(error));
-                }
-            );
-    };
+export const success = (user) => ({
+    type: userConstants.LOGIN_SUCCESS, user
+});
 
-    function request(user) { return { type: userConstants.LOGIN_REQUEST, user } }
-    function success(user) { return { type: userConstants.LOGIN_SUCCESS, user } }
-    function failure(error) { return { type: userConstants.LOGIN_FAILURE, error } }
-}
+export const failure = (error) => ({
+    type: userConstants.LOGIN_FAILURE, error
+});
 
-function logout() {
-    userService.logout();
+
+export const logout = () => {
+    localStorage.removeItem('user');
     return { type: userConstants.LOGOUT };
 }
 
-function getAll() {
-    return dispatch => {
-        dispatch(request());
-
-        userService.getAll()
-            .then(
-                users => dispatch(success(users)),
-                error => dispatch(failure(error))
-            );
-    };
-
-    function request() { return { type: userConstants.GETALL_REQUEST } }
-    function success(users) { return { type: userConstants.GETALL_SUCCESS, users } }
-    function failure(error) { return { type: userConstants.GETALL_FAILURE, error } }
-}

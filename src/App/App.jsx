@@ -7,17 +7,23 @@ import { alertActions } from '../_actions';
 import { PrivateRoute } from '../_components';
 import { HomePage } from '../HomePage';
 import { LoginPage } from '../LoginPage';
+import { NotFoundPage } from '../NotFoundPage';
+
+import httpService from '../_helpers/interceptor';
+
+import { success, failure } from '../_actions/user.actions';
 
 class App extends React.Component {
     constructor(props) {
         super(props);
-
-        const { dispatch } = this.props;
         history.listen((location, action) => {
             // clear alert on location change
-            dispatch(alertActions.clear());
+           this.props.clear();
         });
+        httpService.setupInterceptors();
     }
+
+    
 
     render() {
         const { alert } = this.props;
@@ -32,6 +38,7 @@ class App extends React.Component {
                             <div>
                                 <PrivateRoute exact path="/" component={HomePage} />
                                 <Route path="/login" component={LoginPage} />
+                                <Route path="/not-found" component={NotFoundPage} />
                             </div>
                         </Router>
                     </div>
@@ -48,5 +55,11 @@ function mapStateToProps(state) {
     };
 }
 
-const connectedApp = connect(mapStateToProps)(App);
+const mapDispatchToProps = {
+    success, 
+    failure,
+    clear : alertActions.clear
+}
+
+const connectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
 export { connectedApp as App }; 
